@@ -5,26 +5,269 @@ date: "2025-09-17"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r}
+library(ggplot2)
+library(tidyverse)
+```
+```{r}
+table1
+#> # A tibble: 6 × 4
+#>   country      year  cases population
+#>   <chr>       <int>  <int>      <int>
+#> 1 Afghanistan  1999    745   19987071
+#> 2 Afghanistan  2000   2666   20595360
+#> 3 Brazil       1999  37737  172006362
+#> 4 Brazil       2000  80488  174504898
+#> 5 China        1999 212258 1272915272
+#> 6 China        2000 213766 1280428583
+table2
+#> # A tibble: 12 × 4
+#>   country      year type           count
+#>   <chr>       <int> <chr>          <int>
+#> 1 Afghanistan  1999 cases            745
+#> 2 Afghanistan  1999 population  19987071
+#> 3 Afghanistan  2000 cases           2666
+#> 4 Afghanistan  2000 population  20595360
+#> 5 Brazil       1999 cases          37737
+#> 6 Brazil       1999 population 172006362
+#> # ... with 6 more rows
+table3
+#> # A tibble: 6 × 3
+#>   country      year rate             
+#> * <chr>       <int> <chr>            
+#> 1 Afghanistan  1999 745/19987071     
+#> 2 Afghanistan  2000 2666/20595360    
+#> 3 Brazil       1999 37737/172006362  
+#> 4 Brazil       2000 80488/174504898  
+#> 5 China        1999 212258/1272915272
+#> 6 China        2000 213766/1280428583
 ```
 
-## R Markdown
+```{r}
+# Compute rate per 10,000
+table1 %>% 
+  mutate(rate = cases / population * 10000)
+#> # A tibble: 6 × 5
+#>   country      year  cases population  rate
+#>   <chr>       <int>  <int>      <int> <dbl>
+#> 1 Afghanistan  1999    745   19987071 0.373
+#> 2 Afghanistan  2000   2666   20595360 1.29 
+#> 3 Brazil       1999  37737  172006362 2.19 
+#> 4 Brazil       2000  80488  174504898 5.61 
+#> 5 China        1999 212258 1272915272 1.67 
+#> 6 China        2000 213766 1280428583 1.67
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+# Compute cases per year
+table1 %>% 
+  count(year, wt = cases)
+#> # A tibble: 2 × 2
+#>    year      n
+#>   <int>  <int>
+#> 1  1999 250740
+#> 2  2000 296920
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+# Visualise changes over time
+library(ggplot2)
+ggplot(table1, aes(year, cases)) + 
+  geom_line(aes(group = country), colour = "grey50") + 
+  geom_point(aes(colour = country))
 
-```{r cars}
-summary(cars)
+```
+```{r}
+#Exercise 4.4.1
+#Part 1
+#Table 2 - The first column is the country, the second column is the year (2 for each), the third column is the type of data (either cases or population) and the fourth column is the actual value of that data (count).
+#Table 3 - The first column is the country, the second column is the year, and the third column is the  rate (cases over population).
+#Part 2
+#Table 2
+table2_wide <- table2 %>%
+  pivot_wider(names_from = type, values_from = count) %>% 
+  mutate(rate = (cases / population) * 10000)
+table2_wide
+#Table 3
+table3_clean <- table3 %>%
+  separate(rate, into = c("cases", "population"), sep = "/", convert = TRUE) %>%
+  mutate(rate = (cases / population) * 10000)
+table3_clean
 ```
 
-## Including Plots
-
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r}
+#Lengthening Datasets
+billboard
+#> # A tibble: 317 × 79
+#>   artist       track               date.entered   wk1   wk2   wk3   wk4   wk5
+#>   <chr>        <chr>               <date>       <dbl> <dbl> <dbl> <dbl> <dbl>
+#> 1 2 Pac        Baby Don't Cry (Ke... 2000-02-26      87    82    72    77    87
+#> 2 2Ge+her      The Hardest Part O... 2000-09-02      91    87    92    NA    NA
+#> 3 3 Doors Down Kryptonite          2000-04-08      81    70    68    67    66
+#> 4 3 Doors Down Loser               2000-10-21      76    76    72    69    67
+#> 5 504 Boyz     Wobble Wobble       2000-04-15      57    34    25    17    17
+#> 6 98^0         Give Me Just One N... 2000-08-19      51    39    34    26    26
+#> # ℹ 311 more rows
+#> # ℹ 71 more variables: wk6 <dbl>, wk7 <dbl>, wk8 <dbl>, wk9 <dbl>, ...
+billboard |> 
+  pivot_longer(
+    cols = starts_with("wk"), 
+    names_to = "week", 
+    values_to = "rank"
+  )
+#> # A tibble: 24,092 × 5
+#>    artist track                   date.entered week   rank
+#>    <chr>  <chr>                   <date>       <chr> <dbl>
+#>  1 2 Pac  Baby Don't Cry (Keep... 2000-02-26   wk1      87
+#>  2 2 Pac  Baby Don't Cry (Keep... 2000-02-26   wk2      82
+#>  3 2 Pac  Baby Don't Cry (Keep... 2000-02-26   wk3      72
+#>  4 2 Pac  Baby Don't Cry (Keep... 2000-02-26   wk4      77
+#>  5 2 Pac  Baby Don't Cry (Keep... 2000-02-26   wk5      87
+#>  6 2 Pac  Baby Don't Cry (Keep... 2000-02-26   wk6      94
+#>  #> # ℹ 24,082 more rows
+billboard |> 
+  pivot_longer(
+    cols = starts_with("wk"), 
+    names_to = "week", 
+    values_to = "rank",
+    values_drop_na = TRUE
+  )
+#> # A tibble: 5,307 × 5
+#>   artist track                   date.entered week   rank
+#>   <chr>  <chr>                   <date>       <chr> <dbl>
+#> 1 2 Pac  Baby Don't Cry (Keep... 2000-02-26   wk1      87
+#> 2 2 Pac  Baby Don't Cry (Keep... 2000-02-26   wk2      82
+#> 3 2 Pac  Baby Don't Cry (Keep... 2000-02-26   wk3      72
+#> 4 2 Pac  Baby Don't Cry (Keep... 2000-02-26   wk4      77
+#> 5 2 Pac  Baby Don't Cry (Keep... 2000-02-26   wk5      87
+#> 6 2 Pac  Baby Don't Cry (Keep... 2000-02-26   wk6      94
+#> # ℹ 5,301 more rows
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r}
+#Pivoting Longer
+df <- tribble(
+  ~id,  ~bp1, ~bp2,
+   "A",  100,  120,
+   "B",  140,  115,
+   "C",  120,  125
+)
+df |> 
+  pivot_longer(
+    cols = bp1:bp2,
+    names_to = "measurement",
+    values_to = "value"
+  )
+#> # A tibble: 6 × 3
+#>   id    measurement value
+#>   <chr> <chr>       <dbl>
+#> 1 A     bp1           100
+#> 2 A     bp2           120
+#> 3 B     bp1           140
+#> 4 B     bp2           115
+#> 5 C     bp1           120
+#> 6 C     bp2           125
+```
+
+```{r}
+#Widening Datasets
+cms_patient_experience
+#> # A tibble: 500 × 5
+#>   org_pac_id org_nm                     measure_cd   measure_title   prf_rate
+#>   <chr>      <chr>                      <chr>        <chr>              <dbl>
+#> 1 0446157747 USC CARE MEDICAL GROUP INC CAHPS_GRP_1  CAHPS for MIPS...       63
+#> 2 0446157747 USC CARE MEDICAL GROUP INC CAHPS_GRP_2  CAHPS for MIPS...       87
+#> 3 0446157747 USC CARE MEDICAL GROUP INC CAHPS_GRP_3  CAHPS for MIPS...       86
+#> 4 0446157747 USC CARE MEDICAL GROUP INC CAHPS_GRP_5  CAHPS for MIPS...       57
+#> 5 0446157747 USC CARE MEDICAL GROUP INC CAHPS_GRP_8  CAHPS for MIPS...       85
+#> 6 0446157747 USC CARE MEDICAL GROUP INC CAHPS_GRP_12 CAHPS for MIPS...       24
+#> # ℹ 494 more rows
+cms_patient_experience |> 
+  distinct(measure_cd, measure_title)
+#> # A tibble: 6 × 2
+#>   measure_cd   measure_title                                                 
+#>   <chr>        <chr>                                                         
+#> 1 CAHPS_GRP_1  CAHPS for MIPS SSM: Getting Timely Care, Appointments, and In...
+#> 2 CAHPS_GRP_2  CAHPS for MIPS SSM: How Well Providers Communicate            
+#> 3 CAHPS_GRP_3  CAHPS for MIPS SSM: Patient's Rating of Provider              
+#> 4 CAHPS_GRP_5  CAHPS for MIPS SSM: Health Promotion and Education            
+#> 5 CAHPS_GRP_8  CAHPS for MIPS SSM: Courteous and Helpful Office Staff        
+#> 6 CAHPS_GRP_12 CAHPS for MIPS SSM: Stewardship of Patient Resources
+cms_patient_experience |> 
+  pivot_wider(
+    names_from = measure_cd,
+    values_from = prf_rate
+  )
+#> # A tibble: 500 × 9
+#>   org_pac_id org_nm                   measure_title   CAHPS_GRP_1 CAHPS_GRP_2
+#>   <chr>      <chr>                    <chr>                 <dbl>       <dbl>
+#> 1 0446157747 USC CARE MEDICAL GROUP ... CAHPS for MIPS...          63          NA
+#> 2 0446157747 USC CARE MEDICAL GROUP ... CAHPS for MIPS...          NA          87
+#> 3 0446157747 USC CARE MEDICAL GROUP ... CAHPS for MIPS...          NA          NA
+#> 4 0446157747 USC CARE MEDICAL GROUP ... CAHPS for MIPS...          NA          NA
+#> 5 0446157747 USC CARE MEDICAL GROUP ... CAHPS for MIPS...          NA          NA
+#> 6 0446157747 USC CARE MEDICAL GROUP ... CAHPS for MIPS...          NA          NA
+#> # ℹ 494 more rows
+#> # ℹ 4 more variables: CAHPS_GRP_3 <dbl>, CAHPS_GRP_5 <dbl>, ...
+cms_patient_experience |> 
+  pivot_wider(
+    id_cols = starts_with("org"),
+    names_from = measure_cd,
+    values_from = prf_rate
+  )
+#> # A tibble: 95 × 8
+#>   org_pac_id org_nm           CAHPS_GRP_1 CAHPS_GRP_2 CAHPS_GRP_3 CAHPS_GRP_5
+#>   <chr>      <chr>                  <dbl>       <dbl>       <dbl>       <dbl>
+#> 1 0446157747 USC CARE MEDICA...          63          87          86          57
+#> 2 0446162697 ASSOCIATION OF ...          59          85          83          63
+#> 3 0547164295 BEAVER MEDICAL ...          49          NA          75          44
+#> 4 0749333730 CAPE PHYSICIANS...          67          84          85          65
+#> 5 0840104360 ALLIANCE PHYSIC...          66          87          87          64
+#> 6 0840109864 REX HOSPITAL INC          73          87          84          67
+#> # ℹ 89 more rows
+#> # ℹ 2 more variables: CAHPS_GRP_8 <dbl>, CAHPS_GRP_12 <dbl>
+```
+
+```{r}
+#Pivoting Wider
+df <- tribble(
+  ~id, ~measurement, ~value,
+  "A",        "bp1",    100,
+  "B",        "bp1",    140,
+  "B",        "bp2",    115, 
+  "A",        "bp2",    120,
+  "A",        "bp3",    105
+)
+df |> 
+  pivot_wider(
+    names_from = measurement,
+    values_from = value
+  )
+#> # A tibble: 2 × 4
+#>   id      bp1   bp2   bp3
+#>   <chr> <dbl> <dbl> <dbl>
+#> 1 A       100   120   105
+#> 2 B       140   115    NA
+df |> 
+  distinct(measurement) |> 
+  pull()
+#> [1] "bp1" "bp2" "bp3"
+df |> 
+  select(-measurement, -value) |> 
+  distinct()
+#> # A tibble: 2 × 1
+#>   id   
+#>   <chr>
+#> 1 A    
+#> 2 B
+df |> 
+  select(-measurement, -value) |> 
+  distinct() |> 
+  mutate(x = NA, y = NA, z = NA)
+#> # A tibble: 2 × 4
+#>   id    x     y     z    
+#>   <chr> <lgl> <lgl> <lgl>
+#> 1 A     NA    NA    NA   
+#> 2 B     NA    NA    NA
+```
+```{r}
+#Exercise 4.5.5
+#Question 1 - The pivot longer and pivot wider functions are not symmetrical because column type information is lost when converting from long to wide. Pivot longer stacks multiple columns whilst pivot wider creates column names.
+#Question 2 - The code fails because it thinks 1999 and 2000 are the 1999th and 2000th data points rather than column names. To fix this we can write '1999' and '2000'.
+#Question 3 - We would use pivot longer with the variables: 1) sex, 2) pregnancy' and 3) count.
