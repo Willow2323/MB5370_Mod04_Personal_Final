@@ -8,6 +8,7 @@ output: html_document
 ```{r}
 library(ggplot2)
 library(tidyverse)
+library(dplyr)
 ```
 ```{r}
 table1
@@ -266,8 +267,146 @@ df |>
 #> 1 A     NA    NA    NA   
 #> 2 B     NA    NA    NA
 ```
+
 ```{r}
 #Exercise 4.5.5
 #Question 1 - The pivot longer and pivot wider functions are not symmetrical because column type information is lost when converting from long to wide. Pivot longer stacks multiple columns whilst pivot wider creates column names.
 #Question 2 - The code fails because it thinks 1999 and 2000 are the 1999th and 2000th data points rather than column names. To fix this we can write '1999' and '2000'.
 #Question 3 - We would use pivot longer with the variables: 1) sex, 2) pregnancy' and 3) count.
+```
+
+```{r}
+#Separating and Uniting Data Tables
+table3
+#> # A tibble: 6 × 3
+#>   country      year rate             
+#> * <chr>       <int> <chr>            
+#> 1 Afghanistan  1999 745/19987071     
+#> 2 Afghanistan  2000 2666/20595360    
+#> 3 Brazil       1999 37737/172006362  
+#> 4 Brazil       2000 80488/174504898  
+#> 5 China        1999 212258/1272915272
+#> 6 China        2000 213766/1280428583
+table3 %>% 
+  separate(rate, into = c("cases", "population"))
+#> # A tibble: 6 × 4
+#>   country      year cases  population
+#>   <chr>       <int> <chr>  <chr>     
+#> 1 Afghanistan  1999 745    19987071  
+#> 2 Afghanistan  2000 2666   20595360  
+#> 3 Brazil       1999 37737  172006362 
+#> 4 Brazil       2000 80488  174504898 
+#> 5 China        1999 212258 1272915272
+#> 6 China        2000 213766 1280428583
+table3 %>% 
+  separate(rate, into = c("cases", "population"), sep = "/")
+table3 %>% 
+  separate(rate, into = c("cases", "population"), convert = TRUE)
+#> # A tibble: 6 × 4
+#>   country      year  cases population
+#>   <chr>       <int>  <int>      <int>
+#> 1 Afghanistan  1999    745   19987071
+#> 2 Afghanistan  2000   2666   20595360
+#> 3 Brazil       1999  37737  172006362
+#> 4 Brazil       2000  80488  174504898
+#> 5 China        1999 212258 1272915272
+#> 6 China        2000 213766 1280428583
+table3 %>% 
+  separate(year, into = c("century", "year"), sep = 2)
+#> # A tibble: 6 × 4
+#>   country     century year  rate             
+#>   <chr>       <chr>   <chr> <chr>            
+#> 1 Afghanistan 19      99    745/19987071     
+#> 2 Afghanistan 20      00    2666/20595360    
+#> 3 Brazil      19      99    37737/172006362  
+#> 4 Brazil      20      00    80488/174504898  
+#> 5 China       19      99    212258/1272915272
+#> 6 China       20      00    213766/1280428583
+table5 %>% 
+  unite(new, century, year, sep = "")
+#> # A tibble: 6 × 3
+#>   country     new   rate             
+#>   <chr>       <chr> <chr>            
+#> 1 Afghanistan 1999  745/19987071     
+#> 2 Afghanistan 2000  2666/20595360    
+#> 3 Brazil      1999  37737/172006362  
+#> 4 Brazil      2000  80488/174504898  
+#> 5 China       1999  212258/1272915272
+#> 6 China       2000  213766/1280428583
+```
+
+```{r}
+#Explicit Missing Values
+treatment <- tribble(
+  ~person,           ~treatment, ~response,
+  "Derrick Whitmore", 1,         7,
+  NA,                 2,         10,
+  NA,                 3,         NA,
+  "Katherine Burke",  1,         4
+)
+treatment |>
+  fill(everything())
+#> # A tibble: 4 × 3
+#>   person           treatment response
+#>   <chr>                <dbl>    <dbl>
+#> 1 Derrick Whitmore         1        7
+#> 2 Derrick Whitmore         2       10
+#> 3 Derrick Whitmore         3       10
+#> 4 Katherine Burke          1        4
+```
+
+```{r}
+#Fixed Values
+x <- c(1, 4, 5, 7, NA)
+coalesce(x, 0)
+#> [1] 1 4 5 7 0
+x <- c(1, 4, 5, 7, -99)
+na_if(x, -99)
+#> [1]  1  4  5  7 NA
+```
+
+```{r}
+#NaN
+x <- c(NA, NaN)
+x * 10
+#> [1]  NA NaN
+x == 1
+#> [1] NA NA
+is.na(x)
+#> [1] TRUE TRUE
+```
+
+```{r}
+#Implicit Missing Values
+stocks <- tibble(
+  year  = c(2020, 2020, 2020, 2020, 2021, 2021, 2021),
+  qtr   = c(   1,    2,    3,    4,    2,    3,    4),
+  price = c(1.88, 0.59, 0.35,   NA, 0.92, 0.17, 2.66)
+)
+stocks |>
+  pivot_wider(
+    names_from = qtr, 
+    values_from = price
+  )
+#> # A tibble: 2 × 5
+#>    year   `1`   `2`   `3`   `4`
+#>   <dbl> <dbl> <dbl> <dbl> <dbl>
+#> 1  2020  1.88  0.59  0.35 NA   
+#> 2  2021 NA     0.92  0.17  2.66
+```
+
+```{r}
+#Exercise 4.7.3
+read_csv("a,b\n1,2,3\n4,5,6")
+#Only 2 columns but 3 rows are specified.
+read_csv("a,b,c\n1,2\n1,2,3,4")
+#The number of columns in the data is different to that in the header. Row 1 has 2 values, row 2 has 4 values.
+read_csv("a,b\n\"1")
+#Basically everything is wrong, particuarly the row section.
+read_csv("a,b\n1,2\na,b")
+#a and b will be character vectors as the contain non-numeric strings.
+read_csv("a;b\n1;3")
+#The values are separated by a ";" as opposed to ",".
+```
+
+

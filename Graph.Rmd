@@ -1,0 +1,82 @@
+---
+title: "Graph for Module 4"
+author: "Riley Williams"
+date: "2025-09-17"
+output: html_document
+---
+
+Loading packages
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(readr)
+```
+
+Importing Data
+```{r}
+Assessment1 <- read_csv("data/Assessment1.csv")
+View(Assessment1)
+
+df = Assessment1_in_
+```
+
+Playing around with graphs, finding what works well
+```{r}
+# Get shallow & deep per species
+df_range <- df %>%
+  group_by(Species, Cover10) %>%
+  summarise(Shallow = min(Depth), Deep = max(Depth), .groups = "drop")
+
+ggplot(df_range, aes(y = Species, x = Shallow, xend = Deep, 
+                     color = Cover10)) +
+  geom_segment(aes(yend = Species), size = 1.2) +
+  scale_color_manual(values = c("Yes" = "tomato", "No" = "steelblue")) +
+  scale_x_reverse(limits = c(60,20)) + # reverse depth
+  labs(x = "Depth (m)", y = "Species", color = ">10% cover") +
+  theme_minimal() +
+  theme(axis.text.y = element_text(size = 10))
+
+
+
+ggplot(df_range, aes(y = Species, fill = Cover10)) +
+  geom_tile(aes(x = (Shallow + Deep)/2,   # middle of range
+                width = Deep - Shallow,   # span of range
+                height = 0.6),            # thickness of bar
+            color = "black", alpha = 0.7) +
+  scale_fill_manual(values = c("Yes" = "tomato", "No" = "steelblue")) +
+  scale_x_reverse(limits = c(60,20)) +
+  labs(x = "Depth (m)", y = "Species", fill = ">10% cover") +
+  theme_minimal()
+```
+
+Modifying the graph to make it more visually appealing
+```{r}
+# Collapse shallow & deep into ranges
+df_range <- df %>%
+  group_by(Species, Cover10) %>%
+  summarise(Shallow = min(Depth),
+            Deep = max(Depth),
+            MeanDepth = mean(c(Shallow, Deep)),
+            .groups = "drop")
+
+# Reorder species by mean depth (shallow to deep)
+df_range$Species <- reorder(df_range$Species, df_range$MeanDepth)
+
+ggplot(df_range, aes(y = Species, fill = Cover10)) +
+  geom_tile(aes(x = (Shallow + Deep)/2,   # midpoint
+                width = Deep - Shallow,   # span
+                height = 0.6),            # bar thickness
+            color = "black", alpha = 0.8) +
+  scale_fill_manual(values = c("Yes" = "tomato", "No" = "steelblue")) +
+  scale_x_reverse(limits = c(60,20), breaks = seq(20,60,10)) +
+  labs(x = "Depth (m)", y = "Species", fill = ">10% cover") +
+  theme_minimal() +
+  theme(
+    panel.grid = element_blank(),              # remove default grid
+    axis.text.y = element_text(size = 10),     # bigger species labels
+    axis.text.x = element_text(size = 9)
+  ) +
+  # Add depth guide lines across plot
+  geom_vline(xintercept = seq(20,60,10), 
+             linetype = "dashed", color = "grey70", size = 0.4)
+```
