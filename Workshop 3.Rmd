@@ -267,7 +267,6 @@ df |>
 #> 1 A     NA    NA    NA   
 #> 2 B     NA    NA    NA
 ```
-
 ```{r}
 #Exercise 4.5.5
 #Question 1 - The pivot longer and pivot wider functions are not symmetrical because column type information is lost when converting from long to wide. Pivot longer stacks multiple columns whilst pivot wider creates column names.
@@ -400,7 +399,7 @@ stocks |>
 read_csv("a,b\n1,2,3\n4,5,6")
 #Only 2 columns but 3 rows are specified.
 read_csv("a,b,c\n1,2\n1,2,3,4")
-#The number of columns in the data is different to that in the header. Row 1 has 2 values, row 2 has 4 values.
+#The number of columns in the data is different to that in the header. Row 1 has 2 values, row 2 
 read_csv("a,b\n\"1")
 #Basically everything is wrong, particuarly the row section.
 read_csv("a,b\n1,2\na,b")
@@ -409,4 +408,6 @@ read_csv("a;b\n1;3")
 #The values are separated by a ";" as opposed to ",".
 ```
 
-
+```{r}
+#Relational Data
+```
