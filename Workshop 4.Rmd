@@ -1,0 +1,10 @@
+---
+title: "Workshop 4"
+author: "Riley Williams"
+date: "2025-09-22"
+output: html_document
+---
+
+```{r}
+
+```
