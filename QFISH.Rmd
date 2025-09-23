@@ -17,6 +17,48 @@ library(tmap)
 
 ```{r}
 #Importing Data
-read_xlsx(Shark_Catch.xlsx)
-data <- Shark_Catch
+raw <- read_excel("data/Shark Catch.xlsx", sheet = "export", skip = 1) #Importing the data and removing the first row
+```
+
+```{r}
+#Tidying Data
+raw <- raw %>% 
+  select(-ends_with("Total"))#Removing columns that end with "Total"
+raw <- raw %>% 
+  filter(!`...1` %in% c("Grand Total", NA))
+colnames(raw) #Checking column names
+names(raw)[1] <- "Area" #Renaming the first column to "Area"
+header_year <- read_excel("data/Shark Catch.xlsx", sheet = "export", n_max = 1) %>% unlist() #Extracting the first row
+header_species <- colnames(raw) #Extracting the first row and column names
+new_names <- ifelse(!is.na(header_year), paste(header_year, header_species, sep = "_"), header_species) #Combining the first row with the column names
+names(raw) <- new_names #Combining the first row with the column names
+raw <- raw %>% select(-contains("Total"), -contains("Grand")) #Removing columns that contain "Total" or "Grand"
+raw <- raw %>% 
+  select(-`...4`) #Removing the column "2001_...4 as it contained no data"
+raw <- raw %>%
+  filter(`2001_Area` != "Grand Total") #Removing the row "Grand Total"
+#I noticed the data was still in the not format so had to do some more fidelling around
+species_row <- raw[1, -1]    #Extracting the first row (species names) excluding the first column (Area)   
+raw <- raw[-1, ]         #Removing the first row from the main data frame
+colnames(raw)[-1] <- paste0(
+  sub("\\.\\.\\..*", "", colnames(raw)[-1]),   
+  "_",
+  unlist(species_row)                           
+) #Renaming columns by combining year and species names
+raw_long <- raw %>%
+  pivot_longer(
+    cols = -Area,
+    names_to = c("Year","SpeciesGroup"),
+    names_sep = "_",
+    values_to = "NumberCaught"
+  ) %>%
+  mutate(
+    Year = as.integer(Year),
+    NumberCaught = as.numeric(NumberCaught)
+  ) %>%
+  filter(!is.na(NumberCaught)) #Pivoting the data to long format
+```
+
+```{r}
+#Plotting the Data
 ```
