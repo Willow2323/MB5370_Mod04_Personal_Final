@@ -6,5 +6,76 @@ output: html_document
 ---
 
 ```{r}
+install.packages("sf") 
+install.packages("terra")
+install.packages("tmap")
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library(sf) # simple features
+library (terra) # for raster
+library(tmap) # Thematic maps are geographical maps in which spatial data distributions are visualized
+```
 
+```{r}
+dat <- read_csv("data-for-course/copepods_raw.csv")
+dat <- copepods_raw
+dat
+```
+
+```{r}
+#Check Coordinates
+ggplot(dat) + 
+  aes(x = longitude, y = latitude, color = richness_raw) +
+  geom_point()
+ggplot(dat, aes(x = latitude, y = richness_raw)) + 
+  stat_smooth() + 
+  geom_point()
+```
+
+```{r}
+#Mapping
+sdat <- st_as_sf(dat, coords = c("longitude", "latitude"), 
+                 crs = 4326)
+crs4326 <- st_crs(4326)
+crs4326 # look at the whole CRS
+crs4326$Name # pull out just the name of the crs
+crs4326$wkt # crs in well-known text format
+sdat
+```
+
+```{r}
+#Cartography
+plot(sdat["richness_raw"])
+plot(sdat)
+```
+
+```{r}
+#Thematic maps for communication
+tm_shape(sdat) + 
+  tm_dots(col = "richness_raw")
+tmap_save(tm1, filename = "Richness-map.png", 
+          width = 600, height = 600)
+```
+
+```{r}
+#Shape Files
+aus <- st_read("data/data-for-course/spatial-data/Aussie/Aussie.shp")
+shelf <- st_read("data/data-for-course/spatial-data/aus_shelf/aus_shelf.shp")
+aus
+shelf
+tm_shape(shelf) + 
+  tm_polygons()
+tm_shape(shelf, bbox = sdat) + 
+  tm_polygons() +
+  tm_shape(aus) + 
+  tm_polygons() + 
+  tm_shape(sdat) + 
+  tm_dots()
+```
+
+```{r}
+#Exploring t_map
+tmap_style("beaver")
+vignette('tmap-getstarted')
 ```
