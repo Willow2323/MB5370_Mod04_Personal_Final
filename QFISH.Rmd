@@ -13,6 +13,8 @@ library(dplyr)
 library(sf)
 library (terra)
 library(tmap)
+library(patchwork)
+library(cowplot)
 ```
 
 ```{r}
@@ -61,4 +63,53 @@ raw_long <- raw %>%
 
 ```{r}
 #Plotting the Data
+all_sites <- sort(unique(raw_long$Area))
+my_cols <- setNames(grDevices::rainbow(length(all_sites)), all_sites)  # simple palette
+
+# plotting function - hides legend on each panel
+make_plot <- function(species_name) {
+  raw_long %>%
+    filter(SpeciesGroup == species_name) %>%
+    ggplot(aes(x = Year, y = NumberCaught,
+               colour = factor(Area, levels = all_sites),
+               group = Area)) +
+    geom_line() +
+    geom_point() +
+    scale_colour_manual(values = my_cols, drop = FALSE) + # keep consistent colours
+    labs(title = species_name, x = "Year", y = "Number Caught", colour = "Site") +
+    theme_minimal() +
+    theme(legend.position = "none")   # hide per-plot legends
+}
+
+p_mammal <- make_plot("Mammal")
+p_shark  <- make_plot("Shark")
+p_turtle <- make_plot("Turtle")
+p_other  <- make_plot("Other")
+
+# Create a legend plot that contains all sites (it will be used only to extract the legend)
+legend_plot <- ggplot(raw_long, aes(x = Year, y = NumberCaught,
+                                    colour = Area)) +
+  geom_point() +
+  scale_colour_manual(values = my_cols, drop = FALSE) +
+  guides(colour = guide_legend(ncol = 5, byrow = TRUE)) +  # change ncol to suit
+  theme_void() +
+  theme(legend.position = "bottom",
+        legend.title = element_text(size = 10),
+        legend.text = element_text(size = 8))
+
+# extract legend grob
+legend_grob <- cowplot::get_legend(legend_plot)
+
+# make 2x2 grid of plots
+grid <- cowplot::plot_grid(p_mammal, p_shark, p_turtle, p_other,
+                           ncol = 2, align = "hv")
+
+# stack the grid above the legend (adjust rel_heights to give more/less room to legend)
+final_plot <- cowplot::plot_grid(grid, legend_grob,
+                                ncol = 1, rel_heights = c(1, 0.2))
+
+# display
+print(final_plot)
+cowplot::save_plot("catch_by_species_with_one_legend.png", final_plot,
+                   base_height = 10, base_width = 12, dpi = 300)
 ```
